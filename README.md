@@ -30,6 +30,23 @@ Launch the application using the runner script:
 ./run_linux.sh
 ```
 
+## Development
+
+### Ruff linting
+Install the developer tooling and run Ruff against the hand-written Python
+application code:
+
+```bash
+python -m pip install -r requirements-dev.txt
+python -m ruff check bin run.py subsync
+```
+
+To apply safe automatic fixes such as import sorting:
+
+```bash
+python -m ruff check --fix bin run.py subsync
+```
+
 ## Technical Changes in this Fork
 *   **Build System**: Updated `setup.py` to use `pkg-config` for locating system libraries on Linux.
 *   **FFmpeg 5.x**: Ported C++ code to use the new `AVChannelLayout` API.

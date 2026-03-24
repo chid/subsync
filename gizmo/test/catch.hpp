@@ -7627,7 +7627,21 @@ namespace Catch {
 
 #ifdef CATCH_PLATFORM_MAC
 
-    #define CATCH_TRAP() __asm__("int $3\n" : : ) /* NOLINT */
+    #if defined(__has_builtin)
+        #if __has_builtin(__builtin_debugtrap)
+            #define CATCH_TRAP() __builtin_debugtrap()
+        #endif
+    #endif
+
+    #ifndef CATCH_TRAP
+        #if defined(__i386__) || defined(__x86_64__)
+            #define CATCH_TRAP() __asm__("int $3\n" : : ) /* NOLINT */
+        #else
+            #include <signal.h>
+
+            #define CATCH_TRAP() raise(SIGTRAP)
+        #endif
+    #endif
 
 #elif defined(CATCH_PLATFORM_LINUX)
     // If we can use inline assembler, do it because this allows us to break
@@ -17072,4 +17086,3 @@ using Catch::Detail::Approx;
 // end catch_reenable_warnings.h
 // end catch.hpp
 #endif // TWOBLUECUBES_SINGLE_INCLUDE_CATCH_HPP_INCLUDED
-
