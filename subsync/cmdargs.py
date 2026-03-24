@@ -78,7 +78,7 @@ def parse(argv, opts):
             break
         argv.popKey()
         parserFn = opt.get('parser', parseVar)
-        readArgs = parserFn(argv, res, key, **opt)
+        parserFn(argv, res, key, **opt)
 
     for opt in opts:
         if type(opt) is dict and opt.get('required'):
@@ -128,7 +128,6 @@ def addOptionVal(res, opt, value):
 
 def formatOptArg(opt):
     name = opt['name']
-    descr = descriptions.cmdopts.get(name)
     args = opt.get('aliases') or [ opt.get('alias') or '--' + name ]
 
     arglong =  [ arg for arg in args if arg.startswith('--') or not arg.startswith('-') ]
@@ -244,4 +243,3 @@ def options():
         { 'group': 'options', 'name': 'dump-words', 'metavar': 'SRC[:PATH]', 'parser': parseWordsDump, 'multiple': True },
         { 'group': 'options', 'name': 'test', 'parser': parseConst },
 ]
-

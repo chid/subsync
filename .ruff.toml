@@ -1,0 +1,19 @@
+force-exclude = true
+builtins = ["_"]
+exclude = [
+    ".eggs",
+    "assets",
+    "build",
+    "gizmo",
+    "subsync/gui/layout",
+    "subsync/locale",
+    "web",
+]
+
+[lint]
+select = ["F"]
+
+[lint.per-file-ignores]
+"subsync/__init__.py" = ["F401"]
+"subsync/synchro/__init__.py" = ["F401"]
+"subsync/pubkey.py" = ["F401"]

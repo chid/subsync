@@ -37,7 +37,7 @@ def subsync(argv=None):
             args['cli'] = True
         else:
             try:
-                import wx
+                __import__("wx")
             except Exception as e:
                 logger.warning("couldn't start wx, falling back to headless mode, %r", e)
                 args['cli'] = True
@@ -153,4 +153,3 @@ def _loadTasks(sync=None, fromFile=None):
 if __name__ == "__main__":
     res = subsync()
     sys.exit(res)
-
