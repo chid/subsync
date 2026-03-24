@@ -76,7 +76,7 @@ def showBusyDlgAsyncJob(parent, msg, job, *args, **kwargs):
         try:
             res = job(*args, **kwargs)
         except Exception as err:
-            logger.warn('showBusyDlgAsyncJob: %r', err, exc_info=True)
+            logger.warning('showBusyDlgAsyncJob: %r', err, exc_info=True)
             exc = sys.exc_info()
 
     thread = threading.Thread(target=runJob)

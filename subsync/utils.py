@@ -4,14 +4,14 @@ from subsync.translations import _
 def parseVersion(version, defaultVer=None):
     try:
         return tuple(int(x) for x in version.split('.'))
-    except:
+    except Exception:
         return defaultVer
 
 
 def versionToString(version, defaultVer=None):
     try:
         return '.'.join([ str(v) for v in version ])
-    except:
+    except Exception:
         return defaultVer
 
 
@@ -19,7 +19,7 @@ def getCurrentVersion(defaultVer=None):
     try:
         from subsync.version import version_short
         return parseVersion(version_short)
-    except:
+    except Exception:
         return defaultVer
 
 
@@ -47,7 +47,7 @@ def timeStampFmt(time):
             return '{:d}:{:02d}'.format(m, s)
         else:
             return '{:d}:{:02d}:{:02d}'.format(h, m, s)
-    except:
+    except Exception:
         return '-'
 
 
@@ -55,7 +55,7 @@ def timeStampFractionFmt(time):
     try:
         ms = int((time % 1) * 1000)
         return '{}.{:03d}'.format(timeStampFmt(time), ms)
-    except:
+    except Exception:
         return '-'
 
 
@@ -75,7 +75,7 @@ def timeStampApproxFmt(time):
             return _('1 minute')
         else:
             return _('{} minutes').format(m)
-    except:
+    except Exception:
         return '-'
 
 

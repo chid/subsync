@@ -129,12 +129,17 @@ class SubtitlesCollector(object):
 def parseLine(text):
     fields = text.split(',', 8)
     if len(fields) == 9:
+        def to_int(val):
+            try:
+                return int(val)
+            except (ValueError, TypeError):
+                return 0
         entry = {
             'style':   fields[2],
             'name':    fields[3],
-            'marginl': fields[4],
-            'marginr': fields[5],
-            'marginv': fields[6],
+            'marginl': to_int(fields[4]),
+            'marginr': to_int(fields[5]),
+            'marginv': to_int(fields[6]),
             'effect':  fields[7],
             'text':    fields[8] }
     else:

@@ -54,14 +54,17 @@ class SyncTask(object):
 
 
 class SyncTaskList(object):
+    @staticmethod
     def deserialize(data):
         return [ SyncTask(**d) for d in data ]
 
+    @staticmethod
     def load(path):
         with open(path, 'r') as fp:
             data = yaml.safe_load(fp)
         return SyncTaskList.deserialize(data)
 
+    @staticmethod
     def save(tasks, path):
         data = [ task.serialize() for task in tasks ]
         with open(path, 'w') as fp:

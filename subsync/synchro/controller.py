@@ -103,7 +103,7 @@ class SyncController(object):
         self._thread = None
         self._semaphore = threading.Semaphore()
         self._sync = None
-        self._terminated = False
+        self._terminateEvent = threading.Event()
 
     def configure(self, **kw):
         """Override default synchronization options.
@@ -176,8 +176,9 @@ class SyncController(object):
 
         logger.debug('synchronization options: %s', self._options)
 
-        self._terminated = False
+        self._terminateEvent.clear()
         if isinstance(tasks, Iterable):
+            tasks = list(tasks)
             for task in tasks:
                 self.validateTask(task, interactive=interactive)
 
@@ -199,7 +200,7 @@ class SyncController(object):
         Does nothing if synchronization is not running.
         """
         if self.isRunning():
-            self._terminated = True
+            self._terminateEvent.set()
             self._semaphore.release()
 
     def isRunning(self):
@@ -222,7 +223,7 @@ class SyncController(object):
         """
         if self._thread:
             self._thread.join()
-        return not self._terminated
+        return not self._terminateEvent.is_set()
 
     def getStatus(self):
         """Return current synchronization status.
@@ -313,7 +314,7 @@ class SyncController(object):
     def _run(self, tasks, timeout, interactive):
         try:
             for no, task in enumerate(tasks):
-                if not self._terminated:
+                if not self._terminateEvent.is_set():
                     logger.info('running task %i/%i: %r', no, len(tasks), task)
                     self._runTask(task, timeout, interactive)
                 else:
@@ -325,9 +326,10 @@ class SyncController(object):
 
         finally:
             logger.info('synchronization finished')
-            self._onFinish(self._terminated)
+            self._onFinish(self._terminateEvent.is_set())
 
     def _runTask(self, task, timeout, interactive):
+        sync = None
         try:
             from .synchronizer import Synchronizer
             self._onJobStart(task)
@@ -335,8 +337,8 @@ class SyncController(object):
             sync.onUpdate = self._semaphore.release
             sync.onError = lambda src, err: self._onError(task, src, err)
 
-            sync.init(self._options, runCb=lambda: not self._terminated)
-            if not self._terminated:
+            sync.init(self._options, runCb=lambda: not self._terminateEvent.is_set())
+            if not self._terminateEvent.is_set():
                 sync.start()
 
             self._onJobInit(task)
@@ -346,7 +348,7 @@ class SyncController(object):
             if timeout is not None:
                 lastTime = time.monotonic() - timeout
 
-            while not self._terminated and sync.isRunning() \
+            while not self._terminateEvent.is_set() and sync.isRunning() \
                     and (interactive or minEffort >= 1.0 or status.effort < minEffort):
                 self._semaphore.acquire(timeout=timeout)
                 status = sync.getStatus()
@@ -361,29 +363,30 @@ class SyncController(object):
             logger.warning('%r', err, exc_info=True)
             self._onError(task, 'core', err)
 
-        try:
-            sync.stop(force=True)
-            status = sync.getStatus()
-            logger.info('result: %r', status)
-            succeeded = not self._terminated and status and status.correlated
-            path = None
+        if sync is not None:
+            try:
+                sync.stop(force=True)
+                status = sync.getStatus()
+                logger.info('result: %r', status)
+                succeeded = not self._terminateEvent.is_set() and status and status.correlated
+                path = None
 
-            if not interactive and succeeded and task.out:
-                try:
-                    path = self.saveSynchronizedSubtitles(task=task)
+                if not interactive and succeeded and task.out:
+                    try:
+                        path = self.saveSynchronizedSubtitles(task=task)
 
-                except Exception as err:
-                    logger.warning('subtitle save failed: %r', err, exc_info=True)
-                    self._onError(task, 'core', err)
-                    succeeded = False
+                    except Exception as err:
+                        logger.warning('subtitle save failed: %r', err, exc_info=True)
+                        self._onError(task, 'core', err)
+                        succeeded = False
 
-            res = SyncJobResult(succeeded, self._terminated, path)
-            self._onJobEnd(task, status, res)
+                res = SyncJobResult(succeeded, self._terminateEvent.is_set(), path)
+                self._onJobEnd(task, status, res)
 
-        except Exception as err:
-            logger.warning('%r', err, exc_info=True)
-            self._onError(task, 'core', err)
+            except Exception as err:
+                logger.warning('%r', err, exc_info=True)
+                self._onError(task, 'core', err)
 
-        finally:
-            sync.destroy()
-            logger.info('task finished %r', task)
+            finally:
+                sync.destroy()
+                logger.info('task finished %r', task)

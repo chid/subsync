@@ -38,5 +38,5 @@ def getSpeechAudioFormat(speechModel):
             sampleRate = int(sampleRate)
 
         return gizmo.AudioFormat(sampleFormat, sampleRate, 1)
-    except:
+    except Exception:
         raise error.Error(_('Invalid speech audio format'))

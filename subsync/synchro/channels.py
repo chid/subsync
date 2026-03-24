@@ -3,15 +3,19 @@ from subsync.translations import _
 
 
 class ChannelsMap(object):
+    @staticmethod
     def auto():
         return AutoChannelsMap()
 
+    @staticmethod
     def all():
         return AllChannelsMap()
 
+    @staticmethod
     def custom(cm):
         return CustomChannelsMap(cm)
 
+    @staticmethod
     def deserialize(cm):
         if cm == 'auto' or cm == None:
             return AutoChannelsMap()
@@ -20,6 +24,7 @@ class ChannelsMap(object):
         else:
             return CustomChannelsMap(cm)
 
+    @staticmethod
     def getChannelDescription(ch):
         name = gizmo.AudioFormat.getChannelName(ch)
         desc = gizmo.AudioFormat.getChannelDescription(ch)
@@ -28,15 +33,18 @@ class ChannelsMap(object):
         else:
             return 'channel {}'.format(ch)
 
+    @staticmethod
     def getChannelId(ch):
         try:
             return gizmo.AudioFormat.getChannelIdByName(ch) or int(ch)
-        except:
+        except Exception:
             return None
 
+    @staticmethod
     def getChannelName(ch):
         return gizmo.AudioFormat.getChannelName(ch) or str(ch)
 
+    @staticmethod
     def layoutToIds(layout):
         i = 1
         res = []

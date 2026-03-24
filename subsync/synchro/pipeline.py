@@ -187,6 +187,8 @@ def createProducerPipeline(stream, runCb=None):
 
 
 def createProducerPipelines(stream, no=None, runCb=None):
+    if no is None:
+        no = 1
     pipes = []
     for i in range(no):
         p = createProducerPipeline(stream, runCb)

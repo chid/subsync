@@ -74,7 +74,7 @@ def error_dlg(func):
         try:
             return func(*args, **kwargs)
         except Exception as err:
-            logger.warn('error_dlg: %r', err, exc_info=True)
+            logger.warning('error_dlg: %r', err, exc_info=True)
 
             if len(args) > 0 and isinstance(args[0], wx.Window):
                 parent = args[0]

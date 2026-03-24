@@ -90,7 +90,7 @@ def synchronize(sub, ref, out, *, onError=None, options={}, offline=False, updat
             try:
                 downloader.run()
                 downloader.wait(reraise=True)
-            except:
+            except Exception:
                 downloader.terminate()
                 raise
 
@@ -107,7 +107,7 @@ def synchronize(sub, ref, out, *, onError=None, options={}, offline=False, updat
         sync.configure(**options)
         sync.synchronize(task)
         sync.wait()
-    except:
+    except Exception:
         sync.terminate()
         raise
 
@@ -133,7 +133,7 @@ def version():
     try:
         from .version import version, version_short
         return version_short, version
-    except:
+    except Exception:
         return None, 'UNDEFINED'
 
 

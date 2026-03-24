@@ -78,8 +78,8 @@ class Settings(object):
         self.keep = {}
         self.dirty = False
 
-        self.persistent = persistent.keys()
-        self.volatile = volatile.keys()
+        self.persistent = frozenset(persistent.keys())
+        self.volatile = frozenset(volatile.keys())
 
         for key, val in persistent.items():
             setattr(self, key, val)

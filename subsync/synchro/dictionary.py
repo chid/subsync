@@ -36,7 +36,7 @@ def loadDictionary(langKey, langVal, minLen=0):
                 addEntry(val, key)
 
     if not asset.localVersion():
-        raise Error(_('There is no dictionary for transaltion from {} to {}') \
+        raise Error(_('There is no dictionary for translation from {} to {}') \
                 .format(langKey, langVal)) \
                 .add('language1', langKey) \
                 .add('language2', langVal)
