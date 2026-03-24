@@ -5,6 +5,18 @@
 ## Overview
 **Subtitle Speech Synchronizer** (Subsync) automatically synchronizes subtitles with video by aligning speech with text.
 
+### How it works
+
+Subsync treats synchronization as a correlation problem between two word streams:
+
+1. **Subtitle stream** — words are extracted from the input `.srt`/`.ssa` file along with their timestamps.
+2. **Reference stream** — words are extracted from the reference file. If the reference is another subtitle file, words are read directly. If it is a video or audio file, speech recognition (PocketSphinx) is run on the audio track to produce a timestamped word stream.
+3. **Cross-language support** — if the two streams are in different languages, a bilingual dictionary is used to translate reference words into the subtitle language before matching.
+4. **Correlation** — a C++ correlator (`gizmo`) slides a linear time-transform `t' = a·t + b` over the subtitle timestamps and scores it against the reference word stream using fuzzy string matching. The best-scoring transform is selected.
+5. **Output** — once the correlation factor exceeds the configured threshold, the subtitle timestamps are adjusted by the found formula and saved.
+
+The heavy lifting (demuxing, decoding, speech recognition, correlation) is implemented in the `gizmo` C++ extension and exposed to Python via pybind11. The Python layer handles orchestration, asset management, settings, CLI, and the wxPython GUI.
+
 ## Linux Installation & Usage
 
 This fork simplifies the installation process on Linux by providing helper scripts and removing hardcoded Windows dependencies.
