@@ -3,8 +3,11 @@
 
 #include "avout.h"
 #include "text/words.h"
-#include <pocketsphinx.h>
+#include "general/exception.h"
 #include <string>
+
+#ifdef HAVE_SPHINX
+#include <pocketsphinx.h>
 
 
 class SpeechRecognition : public AVOutput
@@ -51,4 +54,39 @@ class SpeechRecognition : public AVOutput
 		unsigned m_minLen;
 };
 
-#endif
+#else
+
+class SpeechRecognition : public AVOutput
+{
+	public:
+		SpeechRecognition()
+		{
+			throw EXCEPTION("Speech recognition is not available "
+				"(compiled without PocketSphinx support)");
+		}
+		virtual ~SpeechRecognition() {}
+
+		SpeechRecognition(const SpeechRecognition&) = delete;
+		SpeechRecognition(SpeechRecognition&&) = delete;
+		SpeechRecognition& operator= (const SpeechRecognition&) = delete;
+		SpeechRecognition& operator= (SpeechRecognition&&) = delete;
+
+		virtual void start(const AVStream *) {}
+		virtual void stop() {}
+
+		void setParam(const std::string &, const std::string &) {}
+
+		void addWordsListener(WordsListener) {}
+		bool removeWordsListener(WordsListener) { return false; }
+
+		void setMinWordProb(float) {}
+		void setMinWordLen(unsigned) {}
+
+		virtual void feed(const AVFrame *) {}
+		virtual void flush() {}
+		virtual void discontinuity() {}
+};
+
+#endif  /* HAVE_SPHINX */
+
+#endif  /* __SPHINX_H__ */

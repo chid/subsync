@@ -1,6 +1,5 @@
 #include "logger.h"
 #include "text/utf8.h"
-#include <sphinxbase/err.h>
 #include <string>
 #include <cstdarg>
 
@@ -8,6 +7,10 @@ extern "C"
 {
 #include <libavformat/avformat.h>
 }
+
+#ifdef HAVE_SPHINX
+#include <sphinxbase/err.h>
+#endif
 
 
 #define MAX_LOG_SIZE 1024
@@ -19,7 +22,9 @@ namespace logger
 static LoggerCallback g_loggerCallback = NULL;
 static int g_logLevel = LOG_WARNING;
 static int g_ffmpegLogLevel = AV_LOG_WARNING;
+#ifdef HAVE_SPHINX
 static int g_sphinxLogLevel = ERR_WARN;
+#endif
 
 
 void log(LogLevel level, const char *module, const char *msg)
@@ -56,6 +61,7 @@ static void ffmpegLogCb(void *avcl, int level, const char *fmt, va_list vl)
 	}
 }
 
+#ifdef HAVE_SPHINX
 static void sphinxLogCb(void *user_data, err_lvl_t level, const char *fmt, ...)
 {
 	(void) user_data;
@@ -83,46 +89,36 @@ static void sphinxLogCb(void *user_data, err_lvl_t level, const char *fmt, ...)
 		log(lvl, "sphinx", line);
 	}
 }
+#endif
 
 void setDebugLevel(int level)
 {
 	int ffmpeg = AV_LOG_WARNING;
-	int sphinx = ERR_WARN;
 
 	if (level >= LOG_CRITICAL)
-	{
 		ffmpeg = AV_LOG_FATAL;
-		sphinx = ERR_FATAL;
-	}
 	else if (level >= LOG_ERROR)
-	{
 		ffmpeg = AV_LOG_ERROR;
-		sphinx = ERR_ERROR;
-	}
 	else if (level >= LOG_WARNING)
-	{
 		ffmpeg = AV_LOG_WARNING;
-		sphinx = ERR_WARN;
-	}
 	else if (level >= LOG_INFO)
-	{
 		ffmpeg = AV_LOG_VERBOSE;
-
-		// don't show INFO logs from sphinx here since there are tons of it
-		// and they are more like DEBUG logs anyway
-		sphinx = ERR_WARN;
-	}
 	else
-	{
 		ffmpeg = AV_LOG_DEBUG;
-		sphinx = ERR_DEBUG;
-	}
 
 	g_logLevel = level;
 	g_ffmpegLogLevel = ffmpeg;
-	g_sphinxLogLevel = sphinx;
-
 	av_log_set_level(ffmpeg);
+
+#ifdef HAVE_SPHINX
+	int sphinx = ERR_WARN;
+	if (level >= LOG_CRITICAL)       sphinx = ERR_FATAL;
+	else if (level >= LOG_ERROR)     sphinx = ERR_ERROR;
+	else if (level >= LOG_WARNING)   sphinx = ERR_WARN;
+	else if (level >= LOG_INFO)      sphinx = ERR_WARN;
+	else                             sphinx = ERR_DEBUG;
+	g_sphinxLogLevel = sphinx;
+#endif
 }
 
 void setLoggerCallback(LoggerCallback cb)
@@ -130,8 +126,10 @@ void setLoggerCallback(LoggerCallback cb)
 	g_loggerCallback = cb;
 	av_log_set_callback(ffmpegLogCb);
 
+#ifdef HAVE_SPHINX
 	err_set_callback(sphinxLogCb, NULL);
 	err_set_logfp(NULL);
+#endif
 }
 
 static void vlog(LogLevel level, const char *module, const char *fmt, va_list args)

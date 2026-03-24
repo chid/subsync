@@ -1,4 +1,7 @@
 #include "speechrec.h"
+
+#ifdef HAVE_SPHINX
+
 #include "text/utf8.h"
 #include "general/exception.h"
 #include <cstring>
@@ -215,3 +218,5 @@ void SpeechRecognition::parseUtterance()
 	}
 }
 
+
+#endif  /* HAVE_SPHINX */

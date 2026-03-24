@@ -83,13 +83,13 @@ class build_ext(setuptools.command.build_ext.build_ext):
                 'avutil',
                 ]
 
-        sphinx_libs = [
+        self._sphinx_libs = [
                 'pocketsphinx',
                 'sphinxbase',
                 ]
 
         if use_pkg_config:
-            pkgs = [ 'lib' + name for name in ffmpeg_libs ] + sphinx_libs
+            pkgs = [ 'lib' + name for name in ffmpeg_libs ]
             self.cflags       += self.get_pkg_config('--cflags-only-other', pkgs)
             self.ldflags      += self.get_pkg_config('--libs-only-other',   pkgs)
             self.include_dirs += self.get_pkg_config('--cflags-only-I', pkgs, strip_prefixes=['-I'])
@@ -97,7 +97,7 @@ class build_ext(setuptools.command.build_ext.build_ext):
             self.libraries    += self.get_pkg_config('--libs-only-l', pkgs, strip_prefixes=['-l'])
 
         else:
-            self.libraries += ffmpeg_libs + sphinx_libs
+            self.libraries += ffmpeg_libs
 
         import pybind11
         self.include_dirs += self.get_paths(pybind11.get_include(), '')
@@ -126,13 +126,44 @@ class build_ext(setuptools.command.build_ext.build_ext):
         elif self.compiler.compiler_type == 'msvc':
             self.setup_msvc()
 
+        if self.has_sphinx():
+            print('Sphinx found, building with speech recognition support')
+            for ext in self.extensions:
+                ext.define_macros.append(('HAVE_SPHINX', '1'))
+            self.libraries += self._sphinx_libs
+        else:
+            print('Sphinx not found, building without speech recognition support')
+
         super().build_extensions()
+
+    def has_sphinx(self):
+        if self.sphinxbase_dir:
+            header = os.path.join(self.sphinxbase_dir, 'include', 'sphinxbase', 'err.h')
+            if os.path.isfile(header):
+                return True
+        if self.use_pkg_config != 'no' and self.has_pkg_config():
+            try:
+                cmd = ['pkg-config', '--exists'] + self._sphinx_libs
+                proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                proc.communicate()
+                if proc.wait() == 0:
+                    self.cflags       += self.get_pkg_config('--cflags-only-other', self._sphinx_libs)
+                    self.ldflags      += self.get_pkg_config('--libs-only-other',   self._sphinx_libs)
+                    self.include_dirs += self.get_pkg_config('--cflags-only-I', self._sphinx_libs, strip_prefixes=['-I'])
+                    self.library_dirs += self.get_pkg_config('--libs-only-L', self._sphinx_libs, strip_prefixes=['-L', '-R'])
+                    self.libraries    += self.get_pkg_config('--libs-only-l', self._sphinx_libs, strip_prefixes=['-l'])
+                    return True
+            except Exception:
+                pass
+        return False
 
     def setup_unix(self):
         self.cflags += [ '-O3', '-g' ]
 
         if sys.platform == 'darwin':
-            self.cflags += ['-stdlib=libc++', '-mmacosx-version-min=10.7']
+            import platform
+            mac_min = '11.0' if platform.machine() == 'arm64' else '10.9'
+            self.cflags += ['-stdlib=libc++', '-mmacosx-version-min=' + mac_min]
 
         if self.has_flag('-std=c++14'):
             self.cflags += ['-std=c++14']
@@ -142,7 +173,6 @@ class build_ext(setuptools.command.build_ext.build_ext):
         optional_flags = [
                 '-fvisibility=hidden',
                 '-fomit-frame-pointer',
-                '-fexpensive-optimizations',
                 ]
 
         self.cflags += [ fl for fl in optional_flags if self.has_flag(fl) ]

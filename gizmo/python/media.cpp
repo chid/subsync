@@ -75,12 +75,14 @@ void initMediaWrapper(py::module &m)
 	py::class_<SpeechRecognition, shared_ptr<SpeechRecognition>>
 		speechRec(m, "SpeechRecognition", audioOut);
 	speechRec.def(py::init<>());
+#ifdef HAVE_SPHINX
 	speechRec.def("setParam", &SpeechRecognition::setParam);
 	speechRec.def("setMinWordProb", &SpeechRecognition::setMinWordProb);
 	speechRec.def("setMinWordLen", &SpeechRecognition::setMinWordLen);
 	speechRec.def("addWordsListener", &SpeechRecognition::addWordsListener);
 	speechRec.def("removeWordsListener", &SpeechRecognition::removeWordsListener,
 			py::arg("listener") = nullptr);
+#endif
 
 	/*** class NgramSplitter ***/
 	py::class_<NgramSplitter, shared_ptr<NgramSplitter>>

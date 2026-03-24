@@ -22,7 +22,7 @@ AudioDec::~AudioDec()
 
 void AudioDec::start(const AVStream *stream)
 {
-	AVCodec *codec = (AVCodec*) avcodec_find_decoder(stream->codecpar->codec_id);
+	const AVCodec *codec = avcodec_find_decoder(stream->codecpar->codec_id);
 	if (codec == NULL)
 		throw EXCEPTION("can't find suitable audio codec")
 			.module("AudioDec", "avcodec_find_decoder");
@@ -59,7 +59,6 @@ void AudioDec::stop()
 		m_output->stop();
 
 	av_frame_free(&m_frame);
-	avcodec_close(m_codecCtx);
 	avcodec_free_context(&m_codecCtx);
 }
 
@@ -112,11 +111,12 @@ bool AudioDec::feed(const AVPacket *packet)
 
 void AudioDec::flush()
 {
-	AVPacket packet;
-	av_init_packet(&packet);
-	packet.data = NULL;
-	packet.size = 0;
-	while (feed(&packet));
+	avcodec_send_packet(m_codecCtx, NULL);
+	while (avcodec_receive_frame(m_codecCtx, m_frame) >= 0)
+	{
+		if (m_output)
+			m_output->feed(m_frame);
+	}
 
 	if (m_output)
 		m_output->flush();

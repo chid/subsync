@@ -81,7 +81,6 @@ void SubtitleDec::start(const AVStream *stream)
 
 void SubtitleDec::stop()
 {
-	avcodec_close(m_codecCtx);
 	avcodec_free_context(&m_codecCtx);
 }
 
@@ -169,11 +168,12 @@ void SubtitleDec::feedWordsOutput(float beginTime, float endTime, const char *da
 
 void SubtitleDec::flush()
 {
-	AVPacket packet;
-	av_init_packet(&packet);
-	packet.data = NULL;
-	packet.size = 0;
-	feed(&packet);
+	AVPacket *packet = av_packet_alloc();
+	if (packet)
+	{
+		feed(packet);
+		av_packet_free(&packet);
+	}
 }
 
 void SubtitleDec::discontinuity()

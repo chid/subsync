@@ -138,25 +138,26 @@ void Demux::stop()
 
 bool Demux::step()
 {
-	AVPacket packet;
-	av_init_packet(&packet);
+	AVPacket *packetPtr = av_packet_alloc();
+	if (!packetPtr)
+		return false;
 
-	int res = av_read_frame(m_formatContext, &packet);
+	ScopeExit packetFreeGuard([&packetPtr](){ av_packet_free(&packetPtr); });
+
+	int res = av_read_frame(m_formatContext, packetPtr);
 
 	if (res >= 0)
 	{
-		ScopeExit scopedPacketUnrefGuard([&packet](){ av_packet_unref(&packet); });
-
-		unsigned streamID = packet.stream_index;
+		unsigned streamID = packetPtr->stream_index;
 		if (streamID < m_streamsNo)
 		{
 			Demux::Stream &stream = m_streams[streamID];
 
 			for (shared_ptr<Decoder> dec : stream.decoders)
-				dec->feed(&packet);
+				dec->feed(packetPtr);
 
-			if (packet.pts != AV_NOPTS_VALUE)
-				m_position = (double) packet.pts * stream.timeBase;
+			if (packetPtr->pts != AV_NOPTS_VALUE)
+				m_position = (double) packetPtr->pts * stream.timeBase;
 		}
 
 		return true;
